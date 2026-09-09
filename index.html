@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="vi" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hồ Sơ Video Editor - Chiến.P</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome cho Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Inter cho text, Montserrat cho headings -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Montserrat', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#FF3366', // Màu hồng neon nổi bật
+                        secondary: '#00F0FF', // Màu xanh cyan neon
+                        dark: '#0B0B0B',
+                        darker: '#050505',
+                        card: '#151515'
+                    },
+                    boxShadow: {
+                        'neon-pink': '0 0 10px rgba(255, 51, 102, 0.5), 0 0 20px rgba(255, 51, 102, 0.3)',
+                        'neon-cyan': '0 0 10px rgba(0, 240, 255, 0.5), 0 0 20px rgba(0, 240, 255, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0B0B0B;
+            color: #ffffff;
+        }
+        
+        .gradient-text {
+            background: linear-gradient(to right, #FF3366, #00F0FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Styling cho HTML5 Video Player */
+        .video-wrapper {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            background-color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Thiết lập tỷ lệ khung hình chuẩn cho video dọc (Shorts/Reels) */
+        .video-vertical {
+            aspect-ratio: 9 / 16;
+            max-height: 70vh; /* Giới hạn chiều cao trên màn hình lớn để không bị tràn */
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Đảm bảo video lấp đầy khung hình mà không bị méo */
+        }
+
+        /* Nút nổi bật khi hover */
+        .btn-booking {
+            transition: all 0.3s ease;
+        }
+        .btn-booking:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.7);
+        }
+
+        /* Animation cho floating buttons */
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        .floating-social {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Tùy chỉnh Video Player (Custom Controls mượt mà) */
+        .custom-video-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            border-radius: 0.75rem;
+            background-color: #000;
+        }
+
+        .custom-video-container video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .video-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; /* Đưa nút fullscreen sang phải */
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .custom-video-container:hover .video-controls,
+        .custom-video-container.playing:hover .video-controls {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Hiển thị nút Play lớn ở giữa khi dừng */
+        .play-button-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 51, 102, 0.8);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 10;
+            transition: all 0.3s;
+        }
+        
+        .custom-video-container.playing .play-button-overlay {
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -50%) scale(1.5);
+        }
+
+        .play-button-overlay i {
+            color: white;
+            font-size: 24px;
+            margin-left: 5px; /* Căn giữa icon play */
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+            transition: color 0.2s;
+        }
+
+        .control-btn:hover {
+            color: #FF3366;
+        }
+
+        /* Fullscreen Modal Styles */
+        #videoModal {
+            z-index: 9999;
+        }
+
+        .modal-video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-video-container video {
+            max-height: 90vh; /* Chừa không gian cho header */
+            max-width: 100%;
+            object-fit: contain; /* Đảm bảo thấy toàn bộ video */
+        }
+        
+        /* Highlight box */
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(255, 51, 102, 0.1), rgba(0, 240, 255, 0.1));
+            border: 1px solid rgba(255, 51, 102, 0.3);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+        
+        /* Điều chỉnh scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0B0B0B;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #FF3366;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden border-b border-gray-800">
+        <!-- Background effects -->
+        <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 blur-[100px] rounded-full pointer-events-none"></div>
+        <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 blur-[100px] rounded-full pointer-events-none"></div>
+        
+        <div class="container mx-auto px-4 relative z-10 text-center">
+            <h2 class="text-secondary font-semibold tracking-wider uppercase mb-4 text-sm md:text-base">Xin chào, tôi là Chiến.P</h2>
+            <h1 class="font-heading text-5xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight">
+                SHORT <span class="gradient-text">VIDEO</span> <br> EDITOR
+            </h1>
+            <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto mb-10 font-light">
+                Biến ý tưởng của bạn thành những thước phim ngắn bùng nổ, thu hút sự chú ý trong vài giây đầu tiên. Chuyên trị các nền tảng TikTok, Reels, Shorts.
+            </p>
+            
+            <!-- Phần thông báo linh hoạt phong cách -->
+            <div class="highlight-box rounded-2xl p-6 md:p-8 max-w-3xl mx-auto mb-10 transform hover:scale-[1.02] transition-transform duration-300">
+                <h3 class="font-heading text-xl md:text-2xl font-bold mb-3 text-white">
+                    <i class="fa-solid fa-wand-magic-sparkles text-primary mr-2"></i>
+                    Tôi có thể làm theo bất kỳ phong cách edit nào
+                </h3>
+                <p class="text-gray-300 mb-6">Bạn chỉ cần gửi video gốc và ý tưởng, tôi sẽ biến nó thành hiện thực!</p>
+                <button onclick="openContactModal()" class="inline-block bg-transparent border-2 border-secondary text-secondary font-bold py-3 px-8 rounded-full text-lg uppercase tracking-wider hover:bg-secondary hover:text-dark transition-all duration-300 shadow-neon-cyan">
+                    <i class="fa-solid fa-rocket mr-2"></i> Edit Ngay
+                </button>
+            </div>
+
+            <a href="#portfolio" class="inline-block bg-primary text-white font-bold py-4 px-10 rounded-full text-lg uppercase tracking-wider hover:bg-white hover:text-primary transition-colors duration-300 shadow-neon-pink mt-4">
+                Xem Các Dự Án
+            </a>
+        </div>
+    </header>
+
+    <main id="portfolio" class="py-20 container mx-auto px-4">
+        <div class="text-center mb-16">
+            <h2 class="font-heading text-3xl md:text-5xl font-bold mb-4 uppercase">Dự Án <span class="text-primary">Đã Làm</span></h2>
+            <div class="w-24 h-1 bg-gradient-to-r from-primary to-secondary mx-auto rounded"></div>
+        </div>
+
+        <div class="space-y-24">
+
+            <!-- ĐƯA WEDDING LÊN ĐẦU -->
+            <section class="category-section">
+                <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># Wedding</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    
+                    <!-- Item Wedding 1 -->
+                    <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col items-center">
+                        <div class="video-wrapper video-vertical mb-6">
+                            <div class="custom-video-container" onclick="togglePlay(this)">
+                                <video loop playsinline preload="metadata">
+                                    <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966567/snaptik.vn_7530079103391780114.mp4" type="video/mp4">
+                                </video>
+                                <div class="play-button-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="video-controls" onclick="event.stopPropagation()">
+                                    <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-auto w-full text-center max-w-sm">
+                            <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Item Wedding 2 -->
+                    <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col items-center">
+                        <div class="video-wrapper video-vertical mb-6">
+                            <div class="custom-video-container" onclick="togglePlay(this)">
+                                <video loop playsinline preload="metadata">
+                                    <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966592/snaptik.vn_7660552862442851591.mp4" type="video/mp4">
+                                </video>
+                                <div class="play-button-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="video-controls" onclick="event.stopPropagation()">
+                                    <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-auto w-full text-center max-w-sm">
+                            <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="category-section">
+                <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># Bất Động Sản</h3>
+                <!-- Lưới 2 cột cho Desktop, 1 cột cho Mobile -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    
+                    <!-- Item BĐS 1 -->
+                    <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col items-center">
+                        <div class="video-wrapper video-vertical mb-6">
+                            <div class="custom-video-container" onclick="togglePlay(this)">
+                                <video loop playsinline preload="metadata">
+                                    <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966516/example-reel_lFfpVhbq.mp4" type="video/mp4">
+                                </video>
+                                <div class="play-button-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="video-controls" onclick="event.stopPropagation()">
+                                    <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-auto w-full text-center max-w-sm">
+                            <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Item BĐS 2 -->
+                    <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col items-center">
+                        <div class="video-wrapper video-vertical mb-6">
+                            <div class="custom-video-container" onclick="togglePlay(this)">
+                                <video loop playsinline preload="metadata">
+                                    <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966545/snaptik.vn_7648478498994130206.mp4" type="video/mp4">
+                                </video>
+                                <div class="play-button-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="video-controls" onclick="event.stopPropagation()">
+                                    <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-auto w-full text-center max-w-sm">
+                            <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="category-section">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    
+                    <!-- Cột F&B -->
+                    <div>
+                        <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># F&B (Ẩm Thực)</h3>
+                        <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col h-full items-center">
+                            <div class="video-wrapper video-vertical mb-6">
+                                <div class="custom-video-container" onclick="togglePlay(this)">
+                                    <video loop playsinline preload="metadata">
+                                        <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966403/0826_zpyRoj5v.mp4" type="video/mp4">
+                                    </video>
+                                    <div class="play-button-overlay">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                    <div class="video-controls" onclick="event.stopPropagation()">
+                                        <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </button>
+                                        <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto w-full text-center max-w-sm">
+                                <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                    <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột Minigame -->
+                    <div>
+                        <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># Minigame</h3>
+                        <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col h-full items-center">
+                            <div class="video-wrapper video-vertical mb-6">
+                                <div class="custom-video-container" onclick="togglePlay(this)">
+                                    <video loop playsinline preload="metadata">
+                                        <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966446/0828_IsOnkFTy.mp4" type="video/mp4">
+                                    </video>
+                                    <div class="play-button-overlay">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                    <div class="video-controls" onclick="event.stopPropagation()">
+                                        <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </button>
+                                        <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto w-full text-center max-w-sm">
+                                <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                    <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="category-section">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    
+                    <!-- Cột Sport -->
+                    <div>
+                        <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># Thể Thao</h3>
+                        <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col h-full items-center">
+                            <div class="video-wrapper video-vertical mb-6">
+                                <div class="custom-video-container" onclick="togglePlay(this)">
+                                    <video loop playsinline preload="metadata">
+                                        <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966617/vid-3_Pimy27ns.mp4" type="video/mp4">
+                                    </video>
+                                    <div class="play-button-overlay">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                    <div class="video-controls" onclick="event.stopPropagation()">
+                                        <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </button>
+                                        <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto w-full text-center max-w-sm">
+                                <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                    <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột AI Model -->
+                    <div>
+                        <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># AI Model</h3>
+                        <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col h-full items-center">
+                            <div class="video-wrapper video-vertical mb-6">
+                                <div class="custom-video-container" onclick="togglePlay(this)">
+                                    <video loop playsinline preload="metadata">
+                                        <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966357/1_sD58rof1.mp4" type="video/mp4">
+                                    </video>
+                                    <div class="play-button-overlay">
+                                        <i class="fa-solid fa-play"></i>
+                                    </div>
+                                    <div class="video-controls" onclick="event.stopPropagation()">
+                                        <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                            <i class="fa-solid fa-volume-high"></i>
+                                        </button>
+                                        <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                            <i class="fa-solid fa-expand"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto w-full text-center max-w-sm">
+                                <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                    <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <section class="category-section">
+                <h3 class="font-heading text-2xl md:text-3xl text-secondary mb-8 border-l-4 border-secondary pl-4"># Gaming (FF, LQ, LMHT)</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+                    
+                    <!-- Item Game -->
+                    <div class="video-card bg-card p-4 rounded-xl border border-gray-800 flex flex-col items-center">
+                        <div class="video-wrapper video-vertical mb-6">
+                            <div class="custom-video-container" onclick="togglePlay(this)">
+                                <video loop playsinline preload="metadata">
+                                    <source src="https://res.cloudinary.com/cknkabx9/video/upload/v1788966481/0906-2_DlLj852B.mp4" type="video/mp4">
+                                </video>
+                                <div class="play-button-overlay">
+                                    <i class="fa-solid fa-play"></i>
+                                </div>
+                                <div class="video-controls" onclick="event.stopPropagation()">
+                                    <button class="control-btn mute-btn" onclick="toggleMute(this)" title="Mute/Unmute">
+                                        <i class="fa-solid fa-volume-high"></i>
+                                    </button>
+                                    <button class="control-btn fs-btn" onclick="openFullscreenModal(this)" title="Mở toàn màn hình nổi">
+                                        <i class="fa-solid fa-expand"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-auto w-full text-center max-w-sm">
+                            <a href="#contact-modal" onclick="openContactModal()" class="btn-booking inline-block w-full bg-transparent border-2 border-primary text-primary font-bold py-3 px-6 rounded-full hover:bg-primary hover:text-white">
+                                <i class="fa-solid fa-bolt mr-2"></i> LIÊN HỆ BOOKING NGAY
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="hidden md:block"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <footer class="bg-darker py-10 border-t border-gray-900 text-center mt-12">
+        <div class="container mx-auto px-4">
+            <h2 class="font-heading text-2xl font-bold mb-6">Sẵn sàng nâng cấp nội dung của bạn?</h2>
+            <p class="text-gray-500 mb-2">© 2026 Chiến.P Video Editor Portfolio. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Floating Contact Buttons (Cập nhật link Zalo & FB) -->
+    <div class="fixed bottom-6 right-6 flex flex-col gap-4 z-50">
+        <!-- Zalo Button -->
+        <a href="https://zalo.me/0345737560" target="_blank" rel="noopener noreferrer" class="floating-social w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center text-white text-3xl shadow-lg hover:scale-110 transition-transform" style="background-color: #0068FF;" title="Liên hệ Zalo">
+            <span class="font-bold text-xl font-sans">Z</span>
+        </a>
+        <!-- Facebook Button -->
+        <a href="https://www.facebook.com/share/1GzZBQLjaP/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" class="floating-social w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white text-3xl shadow-lg hover:scale-110 transition-transform" title="Liên hệ Facebook" style="animation-delay: 0.5s;">
+            <i class="fa-brands fa-facebook-f"></i>
+        </a>
+    </div>
+
+    <!-- Contact Modal -->
+    <div id="contactModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] hidden flex items-center justify-center p-4">
+        <div class="bg-card border border-gray-800 p-8 rounded-2xl max-w-md w-full relative transform scale-95 opacity-0 transition-all duration-300" id="modalContent">
+            <!-- Nút Đóng -->
+            <button onclick="closeContactModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl w-8 h-8 flex items-center justify-center rounded-full bg-dark">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="text-2xl font-heading font-bold mb-2 text-center text-primary">Liên Hệ Hợp Tác</h3>
+            <p class="text-gray-400 text-center mb-8">Chọn phương thức bạn muốn trao đổi</p>
+            
+            <div class="space-y-4">
+                <a href="https://zalo.me/0345737560" target="_blank" rel="noopener noreferrer" class="flex items-center p-4 bg-[#0068FF]/10 border border-[#0068FF]/30 rounded-xl hover:bg-[#0068FF]/20 transition-colors group">
+                    <div class="w-12 h-12 bg-[#0068FF] rounded-full flex items-center justify-center text-white text-xl font-bold mr-4 group-hover:scale-110 transition-transform">Z</div>
+                    <div>
+                        <h4 class="font-bold text-white">Nhắn tin qua Zalo</h4>
+                        <p class="text-sm text-gray-400">0345737560</p>
+                    </div>
+                </a>
+                
+                <a href="https://www.facebook.com/share/1GzZBQLjaP/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer" class="flex items-center p-4 bg-blue-600/10 border border-blue-600/30 rounded-xl hover:bg-blue-600/20 transition-colors group">
+                    <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl mr-4 group-hover:scale-110 transition-transform">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white">Nhắn tin qua Facebook</h4>
+                        <p class="text-sm text-gray-400">Trao đổi chi tiết dự án</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Video Fullscreen Modal -->
+    <div id="videoModal" class="fixed inset-0 bg-black/95 backdrop-blur-md hidden flex-col">
+        <!-- Header của Modal -->
+        <div class="flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10">
+            <h2 class="font-heading text-xl md:text-2xl font-bold gradient-text tracking-widest uppercase">Editor Chiến.P</h2>
+            <button onclick="closeFullscreenModal()" class="text-white hover:text-primary transition-colors text-3xl w-10 h-10 flex items-center justify-center bg-black/50 rounded-full">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        
+        <!-- Khu vực chứa video -->
+        <div class="flex-1 modal-video-container pt-16 pb-4 px-4" onclick="toggleModalVideoPlay()">
+            <video id="modalVideoElement" loop playsinline controls class="rounded-lg shadow-2xl">
+                <!-- Source sẽ được đưa vào bằng JS -->
+            </video>
+        </div>
+    </div>
+
+    <script>
+        // Script để xử lý popup liên hệ
+        const modal = document.getElementById('contactModal');
+        const modalContent = document.getElementById('modalContent');
+
+        function openContactModal() {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 10);
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeContactModal() {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            document.body.style.overflow = 'auto';
+        }
+
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                closeContactModal();
+            }
+        });
+
+        /* --- XỬ LÝ VIDEO PLAYERS (Trang chính) --- */
+        
+        // Đảm bảo chỉ có 1 video phát tại 1 thời điểm trên trang chính
+        const allVideos = document.querySelectorAll('.custom-video-container video');
+        allVideos.forEach(v => {
+            // Mặc định unmuted cho video trang chính (hoặc muted tuỳ ý bạn)
+            v.muted = false; 
+            
+            v.addEventListener('play', () => {
+                allVideos.forEach(otherVideo => {
+                    if (otherVideo !== v && !otherVideo.paused) {
+                        otherVideo.pause();
+                        otherVideo.parentElement.classList.remove('playing');
+                    }
+                });
+            });
+        });
+
+        // Hàm click vào vùng video để Play/Pause
+        function togglePlay(container) {
+            const video = container.querySelector('video');
+            if (video.paused) {
+                video.play();
+                container.classList.add('playing');
+            } else {
+                video.pause();
+                container.classList.remove('playing');
+            }
+        }
+
+        // Hàm bật/tắt âm thanh
+        function toggleMute(btn) {
+            const container = btn.closest('.custom-video-container');
+            const video = container.querySelector('video');
+            const icon = btn.querySelector('i');
+            
+            if (video.muted) {
+                video.muted = false;
+                icon.classList.remove('fa-volume-xmark');
+                icon.classList.add('fa-volume-high');
+            } else {
+                video.muted = true;
+                icon.classList.remove('fa-volume-high');
+                icon.classList.add('fa-volume-xmark');
+            }
+        }
+
+
+        /* --- XỬ LÝ FULLSCREEN MODAL --- */
+        const videoModal = document.getElementById('videoModal');
+        const modalVideoElement = document.getElementById('modalVideoElement');
+        let currentOriginVideo = null; // Lưu lại video gốc đang phát
+
+        // Mở cửa sổ nổi
+        function openFullscreenModal(btn) {
+            const container = btn.closest('.custom-video-container');
+            const originVideo = container.querySelector('video');
+            const sourceSrc = originVideo.querySelector('source').src;
+            
+            // Dừng video ở trang chính nếu nó đang chạy
+            if (!originVideo.paused) {
+                originVideo.pause();
+                container.classList.remove('playing');
+            }
+            
+            // Setup video trong modal
+            modalVideoElement.innerHTML = `<source src="${sourceSrc}" type="video/mp4">`;
+            modalVideoElement.load();
+            modalVideoElement.muted = originVideo.muted; // Copy trạng thái âm thanh
+            
+            // Hiện modal
+            videoModal.classList.remove('hidden');
+            videoModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            
+            // Tự động phát
+            modalVideoElement.play().catch(e => console.log("Lỗi autoplay", e));
+        }
+
+        // Đóng cửa sổ nổi
+        function closeFullscreenModal() {
+            modalVideoElement.pause();
+            modalVideoElement.innerHTML = ''; // Xoá source để dừng hẳn tải
+            
+            videoModal.classList.add('hidden');
+            videoModal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+        
+        // Play/Pause cho video trong modal khi click vào vùng video
+        function toggleModalVideoPlay() {
+             if (modalVideoElement.paused) {
+                modalVideoElement.play();
+            } else {
+                modalVideoElement.pause();
+            }
+        }
+    </script>
+</body>
+</html>
